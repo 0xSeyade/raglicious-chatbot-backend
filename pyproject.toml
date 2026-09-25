@@ -1,7 +1,7 @@
 [project]
 name = "raglicious-chatbot-backend"
-version = "0.1.0"
-description = "AI Chatbot with RAG"
+version = "1.0.0"
+description = "Raglicious: AI Chatbot API"
 readme = "README.md"
 authors = [
     { email = "sey.adegun@gmail.com" }
@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.141.1",
+    "pydantic-settings>=2.15.0",
     "uvicorn[standard]>=0.53.0",
 ]
 
@@ -25,3 +26,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/app"]
+
+[dependency-groups]
+dev = [
+    "pytest-asyncio>=1.4.0",
+]
