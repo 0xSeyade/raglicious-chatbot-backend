@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
 
+    openai_api_key: str
+    openai_model: str = "gpt-5-mini"
+    openai_timeout_seconds: float = 30.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

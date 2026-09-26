@@ -1,11 +1,12 @@
 import pytest
 
+from app.application.chat.ports import LLMRequest, LLMResponse
 from app.application.chat.services import ChatService
 
 
 class MockTestLLM:
-    async def generate(self, prompt: str) -> str:
-        return f"AI Test response to: {prompt}"
+    async def generate(self, request: LLMRequest) -> LLMResponse:
+        return LLMResponse(content=f"AI Test response to: {request.prompt}")
 
 
 @pytest.mark.asyncio

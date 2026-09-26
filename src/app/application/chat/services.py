@@ -1,4 +1,7 @@
-from app.application.chat.ports import LLMProvider
+from app.application.chat.ports import (
+    LLMProvider,
+    LLMRequest,
+)
 
 
 class ChatService:
@@ -6,4 +9,6 @@ class ChatService:
         self._llm_provider = llm_provider
 
     async def send_message(self, message: str) -> str:
-        return await self._llm_provider.generate(message)
+        request = LLMRequest(prompt=message)
+        response = await self._llm_provider.generate(request)
+        return response.content

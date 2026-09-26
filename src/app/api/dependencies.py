@@ -4,11 +4,13 @@ from fastapi import Depends
 
 from app.application.chat.ports import LLMProvider
 from app.application.chat.services import ChatService
-from app.infrastructure.llm.mock import MockLLMProvider
+from app.core.config import get_settings
+from app.infrastructure.llm.openai_provider import OpenAIProvider
 
 
 def get_llm_provider() -> LLMProvider:
-    return MockLLMProvider()
+    settings = get_settings()
+    return OpenAIProvider(settings)
 
 
 def get_chat_service(
