@@ -1,5 +1,4 @@
 from openai import (
-    AsyncOpenAI,
     APIConnectionError,
     APIStatusError,
     APITimeoutError,
@@ -12,23 +11,21 @@ from app.core.config import Settings
 from app.core.exceptions import (
     LLMAuthenticationError,
     LLMProviderUnavailableError,
-    LLMQuotaExceededError,
     LLMRateLimitError,
 )
+from app.infrastructure.llm.client import LLMClient
 from app.infrastructure.llm.retry import RetryPolicy
 
 
 class OpenAIProvider:
     def __init__(
         self,
-        settings: Settings,
+        client: LLMClient,
+        model: str,
         retry_policy: RetryPolicy | None = None,
     ):
-        self._client = AsyncOpenAI(
-            api_key=settings.openai_api_key,
-            timeout=settings.openai_timeout_seconds,
-        )
-        self._model = settings.openai_model
+        self._client = client
+        self._model = model
         self._retry_policy = retry_policy or RetryPolicy()
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
@@ -36,7 +33,7 @@ class OpenAIProvider:
 
         while True:
             try:
-                response = await self._client.responses.create(
+                response = await self._client.create_response(
                     model=self._model,
                     input=request.prompt,
                 )
