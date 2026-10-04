@@ -7,7 +7,6 @@ from openai import (
 )
 
 from app.application.chat.ports import LLMRequest, LLMResponse
-from app.core.config import Settings
 from app.core.exceptions import (
     LLMAuthenticationError,
     LLMProviderUnavailableError,
