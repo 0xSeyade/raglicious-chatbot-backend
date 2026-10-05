@@ -32,7 +32,7 @@ class ConversationModel(Base):
 
 
 class MessageModel(Base):
-    __tablename = "messages"
+    __tablename__ = "messages"
 
     id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
