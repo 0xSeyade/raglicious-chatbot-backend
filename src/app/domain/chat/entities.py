@@ -12,7 +12,7 @@ class MessageRole(StrEnum):
 @dataclass(frozen=True)
 class Conversation:
     id: UUID
-    conversation_id: UUID
+    created_at: datetime
     updated_at: datetime
 
 

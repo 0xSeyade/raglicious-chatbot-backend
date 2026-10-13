@@ -1,22 +1,26 @@
 class ApplicationError(Exception):
-    pass
+    """Base class for expected application errors."""
 
 
 class LLMError(ApplicationError):
-    pass
+    """Base class for LLM-related errors."""
 
 
 class LLMProviderUnavailableError(LLMError):
-    pass
+    """The LLM provider is temporarily unavailable."""
 
 
 class LLMRateLimitError(LLMError):
-    pass
+    """The LLM provider rate limit was exceeded."""
 
 
 class LLMAuthenticationError(LLMError):
-    pass
+    """The LLM provider rejected the configured credentials."""
 
 
 class LLMQuotaExceededError(LLMError):
-    pass
+    """The LLM provider account exceeded its quota."""
+
+
+class ConversationNotFoundError(ApplicationError):
+    """The requested conversation does not exist."""

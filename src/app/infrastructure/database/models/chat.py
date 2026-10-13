@@ -42,10 +42,7 @@ class MessageModel(Base):
 
     conversation_id: Mapped[UUID] = mapped_column(
         PGUUID(as_uuid=True),
-        ForeignKey(
-            "conversation_id",
-            ondelete="CASCADE",
-        ),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )

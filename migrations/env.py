@@ -1,18 +1,14 @@
 import asyncio
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
 
 from app.core.config import get_settings
 from app.infrastructure.database.base import Base
-from app.infrastructure.database.models.chat import (
-    ConversationModel,
-    MessageModel,
-)
+from app.infrastructure.database.models import chat
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -22,7 +18,7 @@ settings = get_settings()
 
 config.set_main_option(
     "sqlalchemy.url",
-    settings.database_url,
+    settings.database_url.replace("%", "%%"),
 )
 
 # Interpret the config file for Python logging.

@@ -2,6 +2,8 @@ import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from app.core.exceptions import ConversationNotFoundError
+
 from app.core.exceptions import (
     LLMProviderUnavailableError,
     LLMRateLimitError,
@@ -92,6 +94,21 @@ async def handle_llm_quota(
             "error": {
                 "code": "llm_quota_exceeded",
                 "message": ("The chatbot service is currently unavailable."),
+            }
+        },
+    )
+
+
+async def handle_conversation_not_found(
+    request: Request,
+    exc: ConversationNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": {
+                "code": "conversation_not_found",
+                "message": "Conversation not found",
             }
         },
     )

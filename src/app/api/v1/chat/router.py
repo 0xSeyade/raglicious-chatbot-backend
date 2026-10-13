@@ -14,7 +14,16 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 @router.post("", response_model=SendMessageResponse)
 async def send_message(
     request: SendMessageRequest,
-    chat_service: Annotated[ChatService, Depends(get_chat_service)],
+    chat_service: Annotated[
+        ChatService,
+        Depends(get_chat_service),
+    ],
 ) -> SendMessageResponse:
-    response = await chat_service.send_message(request.message)
-    return SendMessageResponse(response=response)
+    result = await chat_service.send_message(
+        message=request.message,
+        conversation_id=request.conversation_id,
+    )
+    return SendMessageResponse(
+        conversation_id=request.conversation_id,
+        response=result.response,
+    )
