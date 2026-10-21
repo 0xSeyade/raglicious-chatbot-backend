@@ -6,7 +6,13 @@ from openai import (
     RateLimitError,
 )
 
-from app.application.chat.ports import LLMRequest, LLMResponse
+from app.application.chat.ports import (
+    LLMProvider,
+    LLMRequest,
+    LLMResponse,
+)
+from app.infrastructure.llm.openai_client import OpenAIClient
+
 from app.core.exceptions import (
     LLMAuthenticationError,
     LLMProviderUnavailableError,
@@ -14,6 +20,26 @@ from app.core.exceptions import (
 )
 from app.infrastructure.llm.client import LLMClient
 from app.infrastructure.llm.retry import RetryPolicy
+
+
+class OpenAILLMProvider(LLMProvider):
+    def __init__(self, client: OpenAIClient) -> None:
+        self._client = client
+
+    async def generate(self, request: LLMRequest) -> LLMResponse:
+        messages = [
+            {
+                "role": message.role.value,
+                "content": message.content,
+            }
+            for message in request.messages
+        ]
+
+        response = await self._client.generate(
+            messages=messages,
+        )
+
+        return LLMResponse(content=response)
 
 
 class OpenAIProvider:

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from app.application.chat.ports import (
+    LLMMessage,
     LLMProvider,
     LLMRequest,
 )
@@ -57,8 +58,20 @@ class ChatService:
             await self._transaction_manager.rollback()
             raise
 
+        messages = await self._conversation_repository.get_messages(conversation.id)
+
+        llm_messages = [
+            LLMMessage(
+                role=stored_message.role,
+                content=stored_message.content,
+            )
+            for stored_message in messages
+        ]
+
         try:
-            llm_response = await self._llm_provider.generate(LLMRequest(prompt=message))
+            llm_response = await self._llm_provider.generate(
+                LLMRequest(messages=llm_messages)
+            )
 
             await self._conversation_repository.add_message(
                 conversation_id=conversation.id,
@@ -76,7 +89,3 @@ class ChatService:
             conversation_id=conversation.id,
             response=llm_response.content,
         )
-
-        # request = LLMRequest(prompt=message)
-        # response = await self._llm_provider.generate(request)
-        # return response.content

@@ -141,7 +141,7 @@ async def test_send_message_creates_conversation_and_persists_messages(
     assert assistant_message.role == MessageRole.ASSISTANT
     assert assistant_message.content == "Peace from AI"
 
-    assert llm.requests == [LLMRequest(prompt="Peace")]
+    assert llm.requests == [LLMRequest(messages=["Peace"])]
     assert transactions.commit_count == 2
     assert transactions.rollback_count == 0
 
