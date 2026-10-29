@@ -7,6 +7,8 @@ from openai.types.responses import ResponseInputParam
 
 from app.application.chat.ports import LLMRequest, LLMMessage, MessageRole
 from app.infrastructure.llm.openai_provider import OpenAIProvider
+from app.infrastructure.llm.retry import RetryPolicy
+from app.core.exceptions import LLMRateLimitError
 
 
 class MockResponse:
@@ -189,3 +191,65 @@ async def test_generate_retries_after_429() -> None:
 
     assert result.content == "Peace from the mock OpenAI response"
     assert client.attempts == 2
+
+
+@pytest.mark.asyncio
+async def test_generate_raises_llm_rate_limit_retries_exhausted() -> None:
+    class AlwaysRateLimitedClient:
+        def __init__(self) -> None:
+            self.attempts = 0
+
+        async def create_response(
+            self,
+            *,
+            model: str,
+            input: ResponseInputParam,
+        ) -> MockResponse:
+            self.attempts += 1
+
+            request = httpx.Request(
+                "POST",
+                "https://api.openai.com/v1/responses",
+            )
+
+            response = httpx.Response(
+                status_code=429,
+                request=request,
+            )
+
+            raise APIStatusError(
+                "Rate limit exceeded.",
+                response=response,
+                body=None,
+            )
+
+    client = AlwaysRateLimitedClient()
+
+    provider = OpenAIProvider(
+        client=client,
+        model="test-model",
+        retry_policy=RetryPolicy(
+            max_attempts=3,
+            base_delay=0.1,
+            jitter=0.0,
+        ),
+    )
+
+    with patch(
+        "app.infrastructure.llm.retry.asyncio.sleep",
+        new_callable=AsyncMock,
+    ) as mock_sleep:
+        with pytest.raises(LLMRateLimitError):
+            await provider.generate(
+                LLMRequest(
+                    messages=[
+                        LLMMessage(
+                            role=MessageRole.USER,
+                            content="Peace",
+                        ),
+                    ]
+                )
+            )
+
+    assert client.attempts == 3
+    assert mock_sleep.await_count == 2
