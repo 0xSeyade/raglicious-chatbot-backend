@@ -3,7 +3,7 @@ from uuid import UUID, uuid4
 
 from datetime import datetime, timezone
 
-from app.application.chat.ports import LLMRequest, LLMResponse
+from app.application.chat.ports import LLMRequest, LLMResponse, LLMMessage
 from app.application.chat.services import ChatService, ChatResult
 from app.core.exceptions import (
     ConversationNotFoundError,
@@ -13,7 +13,10 @@ from app.domain.chat.entities import Conversation, Message, MessageRole
 
 
 class MockLLMProvider:
-    def __init__(self, response: str = "Peace from AI") -> None:
+    def __init__(
+        self,
+        response: str = "Peace from AI, to you too!",
+    ) -> None:
         self.response = response
         self.requests: list[LLMRequest] = []
         self.error: Exception | None = None
@@ -116,17 +119,19 @@ def dependencies() -> tuple[
     return llm, repository, transactions, service
 
 
+# Unit tests
+# =================
 @pytest.mark.asyncio
 async def test_send_message_creates_conversation_and_persists_messages(
     dependencies,
 ) -> None:
     llm, repository, transactions, service = dependencies
 
-    result = await service.send_message("Peace")
+    result = await service.send_message("Peace!")
 
     assert isinstance(result, ChatResult)
     assert isinstance(result.conversation_id, UUID)
-    assert result.response == "Peace from AI"
+    assert result.response == "Peace from AI, to you too!"
 
     assert repository.created_count == 1
     assert len(repository.messages) == 2
@@ -135,13 +140,22 @@ async def test_send_message_creates_conversation_and_persists_messages(
 
     assert user_message.conversation_id == result.conversation_id
     assert user_message.role == MessageRole.USER
-    assert user_message.content == "Peace"
+    assert user_message.content == "Peace!"
 
     assert assistant_message.conversation_id == result.conversation_id
     assert assistant_message.role == MessageRole.ASSISTANT
-    assert assistant_message.content == "Peace from AI"
+    assert assistant_message.content == "Peace from AI, to you too!"
 
-    assert llm.requests == [LLMRequest(messages=["Peace"])]
+    assert llm.requests == [
+        LLMRequest(
+            messages=[
+                LLMMessage(
+                    role=MessageRole.USER,
+                    content="Peace!",
+                )
+            ]
+        )
+    ]
     assert transactions.commit_count == 2
     assert transactions.rollback_count == 0
 
@@ -155,7 +169,7 @@ async def test_send_message_reuses_existing_conversation(
     conversation = await repository.create_conversation()
 
     result = await service.send_message(
-        "Follow-up question",
+        "What do you think of Person of Interest?",
         conversation_id=conversation.id,
     )
 
@@ -206,3 +220,54 @@ async def test_send_message_preserves_user_message_when_llm_fails(
 
     assert transactions.commit_count == 1
     assert transactions.rollback_count == 1
+
+
+@pytest.mark.asyncio
+async def test_send_message_includes_conversation_history(
+    dependencies,
+) -> None:
+    llm, repository, transactions, service = dependencies
+
+    first_result = await service.send_message("Peace")
+
+    second_result = await service.send_message(
+        "What do you think of Person of Interest?",
+        conversation_id=first_result.conversation_id,
+    )
+
+    assert second_result.conversation_id == first_result.conversation_id
+    assert repository.created_count == 1
+
+    assert len(llm.requests) == 2
+
+    # 1st request
+    assert llm.requests[0] == LLMRequest(
+        messages=[
+            LLMMessage(
+                role=MessageRole.USER,
+                content="Peace",
+            )
+        ]
+    )
+
+    # 2nd request
+    assert llm.requests[1] == LLMRequest(
+        messages=[
+            LLMMessage(
+                role=MessageRole.USER,
+                content="Peace",
+            ),
+            LLMMessage(
+                role=MessageRole.ASSISTANT,
+                content="Peace from AI, to you too!",
+            ),
+            LLMMessage(
+                role=MessageRole.USER,
+                content="What do you think of Person of Interest?",
+            ),
+        ]
+    )
+
+    assert len(repository.messages) == 4
+    assert transactions.commit_count == 4
+    assert transactions.rollback_count == 0

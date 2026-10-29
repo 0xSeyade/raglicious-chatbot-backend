@@ -1,5 +1,5 @@
 from typing import Protocol
-from openai.types.responses import Response
+from openai.types.responses import Response, ResponseInputParam
 
 
 class LLMClient(Protocol):
@@ -7,5 +7,5 @@ class LLMClient(Protocol):
         self,
         *,
         model: str,
-        input: str,
+        input: ResponseInputParam,
     ) -> Response: ...

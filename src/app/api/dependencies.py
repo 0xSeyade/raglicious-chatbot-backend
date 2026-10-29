@@ -21,7 +21,12 @@ from app.infrastructure.database.transactions import (
 
 def get_llm_provider() -> LLMProvider:
     settings = get_settings()
-    client = OpenAIClient(settings)
+
+    client = OpenAIClient(
+        api_key=settings.openai_api_key,
+        model=settings.openai_model,
+    )
+
     return OpenAIProvider(
         client=client,
         model=settings.openai_model,
