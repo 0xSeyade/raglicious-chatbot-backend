@@ -271,3 +271,43 @@ async def test_send_message_includes_conversation_history(
     assert len(repository.messages) == 4
     assert transactions.commit_count == 4
     assert transactions.rollback_count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_conversation_messages_returns_history(
+    dependencies,
+) -> None:
+    llm, repository, transactions, service = dependencies
+
+    result = await service.send_message("Peace")
+
+    messages = await service.get_conversation_messages(result.conversation_id)
+
+    assert len(messages) == 2
+    assert messages[0].conversation_id == result.conversation_id
+    assert messages[0].role == MessageRole.USER
+    assert messages[0].content == "Peace"
+
+    assert messages[1].conversation_id == result.conversation_id
+    assert messages[1].role == MessageRole.ASSISTANT
+    assert messages[1].content == "Peace from AI, to you too!"
+
+    assert transactions.commit_count == 2
+    assert transactions.rollback_count == 0
+
+
+@pytest.mark.asyncio
+async def test_get_conversation_messages_raises_when_not_found(
+    dependencies,
+) -> None:
+    llm, repository, transactions, service = dependencies
+
+    unknown_id = uuid4()
+
+    with pytest.raises(ConversationNotFoundError):
+        await service.get_conversation_messages(unknown_id)
+
+    assert repository.created_count == 0
+    assert repository.messages == []
+    assert transactions.commit_count == 0
+    assert transactions.rollback_count == 0

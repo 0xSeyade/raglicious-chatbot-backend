@@ -10,7 +10,7 @@ from app.application.chat.ports import (
 from app.application.chat.transactions import TransactionManager
 from app.application.chat.repositories import ConversationRepository
 from app.core.exceptions import ConversationNotFoundError
-from app.domain.chat.entities import MessageRole
+from app.domain.chat.entities import Message, MessageRole
 
 
 @dataclass(frozen=True)
@@ -89,3 +89,16 @@ class ChatService:
             conversation_id=conversation.id,
             response=llm_response.content,
         )
+
+    async def get_conversation_messages(
+        self,
+        conversation_id: UUID,
+    ) -> list[Message]:
+        conversation = await self._conversation_repository.get_conversation(
+            conversation_id
+        )
+
+        if conversation is None:
+            raise ConversationNotFoundError()
+
+        return await self._conversation_repository.get_messages(conversation_id)

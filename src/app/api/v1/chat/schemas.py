@@ -11,3 +11,13 @@ class SendMessageRequest(BaseModel):
 class SendMessageResponse(BaseModel):
     conversation_id: UUID
     response: str
+
+
+class MessageResponse(BaseModel):
+    role: str
+    content: str
+
+
+class ConversationHistoryResponse(BaseModel):
+    conversation_id: UUID
+    messages: list[MessageResponse]
